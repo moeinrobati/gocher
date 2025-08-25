@@ -1,0 +1,32 @@
+html, body, #root, #container-home {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #121212;
+
+  /* غیرفعال کردن انتخاب متن */
+  user-select: none;
+
+  /* حذف رنگ هایلایت انتخاب متن */
+  -webkit-tap-highlight-color: transparent; /* مخصوص موبایل */
+  -webkit-user-select: none; /* سافاری */
+  -moz-user-select: none; /* فایرفاکس */
+  -ms-user-select: none; /* اینترنت اکسپلورر */
+  
+}
+
+/* حذف یا کم‌رنگ کردن نوار آبی فوکوس */
+:focus {
+  outline: none;
+}
+
+/* حذف رنگ انتخاب متن هنگام انتخاب (اگر user-select:none کافی نبود) */
+::selection {
+  background: transparent;
+}
+
+/* اگر روی دکمه‌ها و لینک‌ها این آبی هنوز میاد */
+button:focus, a:focus {
+  outline: none;
+  box-shadow: none;
+}
