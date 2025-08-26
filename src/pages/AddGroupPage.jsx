@@ -12,9 +12,6 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-// Telegram URL - !!! نام کاربری ربات خود را اینجا جایگزین کنید !!!
-const TELEGRAM_BOT_ADD_URL = "https://t.me/gocherbot?startgroup=true";
-
 // Style & Dimension Constants
 const COLORS = {
   primary: "#19b3d2ff",
@@ -68,12 +65,9 @@ export default function AddGroupPage() {
 
   // Effect for fetching channels and setting up realtime subscription
   useEffect(() => {
-    // Don't run if the user is not loaded yet
     if (!user) return;
-
     const userId = user.id;
 
-    // Fetch initial channels
     const fetchChannels = async () => {
       const { data, error } = await supabase
         .from("channels")
@@ -89,7 +83,6 @@ export default function AddGroupPage() {
     };
     fetchChannels();
 
-    // Realtime subscription for new channels
     const channelSub = supabase
       .channel(`public:channels:owner_id=eq.${userId}`)
       .on(
@@ -101,19 +94,32 @@ export default function AddGroupPage() {
       )
       .subscribe();
 
-    // Cleanup subscription on component unmount
     return () => {
       supabase.removeChannel(channelSub);
     };
-  }, [user]); // This effect depends on the user object
+  }, [user]);
 
+  // --- Handlers ---
   const handleConfirm = () => {
-    // You can add logic here, e.g., navigate to the next step if a channel is selected
     alert("Confirm clicked!");
   };
 
   const handleBack = () => {
     router.push("/create?step=1");
+  };
+
+  // Handler for opening the Telegram link in a Mini App
+  const handleAddGroupClick = () => {
+    const url = "https://t.me/gocherbot?startgroup=true";
+
+    if (window.Telegram && window.Telegram.WebApp) {
+      // Use the official Telegram Mini App method to open the link
+      window.Telegram.WebApp.openTelegramLink(url);
+    } else {
+      // Fallback for testing in a regular browser
+      window.open(url, "_blank");
+      console.warn("Telegram WebApp script not found. Using standard window.open().");
+    }
   };
 
   const calculatedHeight = Math.min(
@@ -145,11 +151,10 @@ export default function AddGroupPage() {
         </Typography>
 
         <Box sx={{ mt: 2, width: "100%", maxWidth: 350 }}>
+          {/* CORRECTED BUTTON FOR TELEGRAM MINI APP */}
           <Button
             variant="contained"
-            href={TELEGRAM_BOT_ADD_URL} // Use href for link
-            target="_blank" // Open in a new tab
-            rel="noopener noreferrer" // Security best practice for target="_blank"
+            onClick={handleAddGroupClick} // Use onClick to call the handler
             sx={{
                 fontWeight: "bold", fontSize: 15, backgroundColor: COLORS.text, color: "#000",
                 border: "2px solid #e5ff00ff", borderRadius: 8, boxShadow: "none", width: "100%",
