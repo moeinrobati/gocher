@@ -6,8 +6,9 @@ export default async function handler(req, res) {
   }
 
   const update = req.body;
+  console.log("Update received:", JSON.stringify(update, null, 2));
 
-  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   async function addGift(user_id, username, gift_type, gift_id, publisher_chat, is_unique) {
@@ -21,7 +22,7 @@ export default async function handler(req, res) {
       created_at: new Date().toISOString()
     };
 
-    await fetch(`${SUPABASE_URL}/rest/v1/gifts`, {
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/gifts`, {
       method: "POST",
       headers: {
         apikey: SUPABASE_KEY,
@@ -31,21 +32,24 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify(data)
     });
+
+    const json = await resp.json();
+    console.log("Supabase insert response:", json);
+    return json;
   }
 
   try {
-    // فقط هدیه‌های منحصر به فرد
-    if (update.channel_post && update.channel_post.unique_gift) {
-      const gift = update.channel_post.unique_gift;
-      const publisher = gift.publisher_chat?.username ?? null;
+    // 👇 برای تست، مثلا فقط پیام کانال رو لاگ کن
+    if (update.channel_post) {
+      const post = update.channel_post;
 
       await addGift(
-        gift.sender_user_id ?? null,
-        gift.sender_username ?? "",
-        "unique",
-        gift.id,
-        publisher,
-        true
+        post.sender_chat?.id ?? null,
+        post.sender_chat?.username ?? "",
+        "channel_post",
+        post.message_id,
+        post.chat?.username ?? null,
+        false
       );
     }
 
