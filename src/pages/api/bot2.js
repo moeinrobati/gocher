@@ -7,8 +7,8 @@ export default async function handler(req, res) {
 
   const update = req.body;
 
-  const SUPABASE_URL = process.env.SUPABASE_URL;
-  const SUPABASE_KEY = process.env.SUPABASE_KEY;
+  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   async function addGift(user_id, username, gift_type, gift_id, publisher_chat, is_unique) {
     const data = {
