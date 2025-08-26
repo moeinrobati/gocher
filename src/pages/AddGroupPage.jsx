@@ -135,7 +135,7 @@ export default function AddGroupPage() {
           <Button
             variant="contained"
             onClick={() => {
-              window.open("https://t.me/YourBot?startgroup=true", "_blank");
+              window.open("https://t.me/gocherbot=true", "_blank");
             }}
             sx={{
               display: "inline-flex",
