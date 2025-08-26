@@ -13,7 +13,7 @@ const supabase = createClient(
 );
 
 // Telegram URL - !!! نام کاربری ربات خود را اینجا جایگزین کنید !!!
-const TELEGRAM_BOT_ADD_URL = "https://t.me/YourBotUsername?startgroup=true";
+const TELEGRAM_BOT_ADD_URL = "https://t.me/gocherbot?startgroup=true";
 
 // Style & Dimension Constants
 const COLORS = {
