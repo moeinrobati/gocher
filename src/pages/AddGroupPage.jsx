@@ -3,231 +3,192 @@ import { Box, Button, Typography, IconButton } from "@mui/material";
 import Lottie from "lottie-react";
 import { useRouter } from "next/router";
 import { createClient } from "@supabase/supabase-js";
-
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import StepTerms from "../components/StepTerms";
 
-// Supabase
+// --- Constants ---
+// Supabase Client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
+// Telegram URL - !!! نام کاربری ربات خود را اینجا جایگزین کنید !!!
+const TELEGRAM_BOT_ADD_URL = "https://t.me/YourBotUsername?startgroup=true";
+
+// Style & Dimension Constants
+const COLORS = {
+  primary: "#19b3d2ff",
+  background: "#121212",
+  text: "#ffffff",
+  textSecondary: "#888",
+  textMuted: "#aeaeaeff",
+  accent: "#e9ce02ff",
+  accentHover: "#eaff00ff",
+  border: "#666",
+  listItemBg: "#444",
+  listBg: "#2c2c2c",
+};
+
+const LIST_DIMENSIONS = {
+  baseHeight: 80,
+  itemHeight: 50,
+  maxHeight: 300,
+};
+
+// --- Component ---
 export default function AddGroupPage() {
+  const [user, setUser] = useState(null);
+  const [channels, setChannels] = useState([]);
+  const [error, setError] = useState(null);
   const [mainAnimation, setMainAnimation] = useState(null);
   const [gradientAnimation, setGradientAnimation] = useState(null);
   const router = useRouter();
 
-  const [channels, setChannels] = useState([]);
-  const userId = 12345; // جایگزین با شناسه واقعی کاربر
-
+  // Effect for fetching animations
   useEffect(() => {
     fetch("/animations/Cube shape animation.json")
       .then((res) => res.json())
-      .then((data) => setMainAnimation(data))
+      .then(setMainAnimation)
       .catch((err) => console.error("Failed to load Lottie JSON", err));
 
     fetch("/animations/Gradient Footer.json")
       .then((res) => res.json())
-      .then((data) => setGradientAnimation(data))
+      .then(setGradientAnimation)
       .catch((err) => console.error("Failed to load Gradient JSON", err));
   }, []);
 
-  // Load initial channels
+  // Effect for getting the authenticated user
   useEffect(() => {
+    const getSession = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getSession();
+  }, []);
+
+  // Effect for fetching channels and setting up realtime subscription
+  useEffect(() => {
+    // Don't run if the user is not loaded yet
+    if (!user) return;
+
+    const userId = user.id;
+
+    // Fetch initial channels
     const fetchChannels = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("channels")
         .select("*")
         .eq("owner_id", userId);
-      setChannels(data || []);
+
+      if (error) {
+        console.error("Error fetching channels:", error.message);
+        setError("Could not fetch your channels. Please try again later.");
+      } else {
+        setChannels(data || []);
+      }
     };
     fetchChannels();
 
-    // Realtime subscription
+    // Realtime subscription for new channels
     const channelSub = supabase
       .channel(`public:channels:owner_id=eq.${userId}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "channels", filter: `owner_id=eq.${userId}` },
         (payload) => {
-          setChannels((prev) => [...prev, payload.new]);
+          setChannels((prevChannels) => [...prevChannels, payload.new]);
         }
       )
       .subscribe();
 
+    // Cleanup subscription on component unmount
     return () => {
       supabase.removeChannel(channelSub);
     };
-  }, [userId]);
+  }, [user]); // This effect depends on the user object
 
   const handleConfirm = () => {
+    // You can add logic here, e.g., navigate to the next step if a channel is selected
     alert("Confirm clicked!");
   };
+
   const handleBack = () => {
     router.push("/create?step=1");
   };
 
-  const baseHeight = 80;
-  const itemHeight = 50;
-  const maxHeight = 300;
-  const calculatedHeight = Math.min(baseHeight + channels.length * itemHeight, maxHeight);
+  const calculatedHeight = Math.min(
+    LIST_DIMENSIONS.baseHeight + channels.length * LIST_DIMENSIONS.itemHeight,
+    LIST_DIMENSIONS.maxHeight
+  );
 
   return (
-    <Box
-      sx={{
-        height: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        alignItems: "center",
-        position: "relative",
-        minHeight: "100vh",
-        backgroundColor: "#121212",
-        pt: 3,
-      }}
-    >
-      {/* هدر با دکمه برگشت بالا چپ */}
+    <Box sx={{
+        height: "100vh", display: "flex", flexDirection: "column",
+        justifyContent: "space-between", alignItems: "center", position: "relative",
+        minHeight: "100vh", backgroundColor: COLORS.background, pt: 3,
+      }} >
       <Box sx={{ position: "fixed", top: 10, left: 10, zIndex: 10 }}>
-        <IconButton onClick={handleBack} sx={{ color: "#19b3d2ff" }} aria-label="back">
+        <IconButton onClick={handleBack} sx={{ color: COLORS.primary }} aria-label="back">
           <ArrowBackIcon />
         </IconButton>
       </Box>
 
-      {/* بخش بالای صفحه */}
-      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-        {mainAnimation ? (
-          <Box sx={{ width: 150, height: 150 }}>
-            <Lottie animationData={mainAnimation} loop={true} />
-          </Box>
-        ) : (
-          <div>Loading animation...</div>
-        )}
-
-        <Typography
-          variant="h6"
-          sx={{
-            mt: 3,
-            fontWeight: "bold",
-            color: "#ffffff",
-            textAlign: "center",
-          }}
-        >
+      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", px: 2 }}>
+        {mainAnimation && <Box sx={{ width: 150, height: 150 }}><Lottie animationData={mainAnimation} loop={true} /></Box>}
+        
+        <Typography variant="h6" sx={{ mt: 3, fontWeight: "bold", color: COLORS.text, textAlign: "center" }}>
           Add Telegram Channel or Group
         </Typography>
-        <Typography
-          sx={{
-            mb: 3,
-            color: "#888",
-            fontSize: "0.9rem",
-            lineHeight: 1.5,
-            textAlign: "center",
-            maxWidth: 350,
-            mx: "auto",
-          }}
-        >
-          Click “Add New” to add your public channel or group. If it has already
-          been added by another user, use the search function. To add a private,
-          you must be its Owner.
+
+        <Typography sx={{ mb: 3, color: COLORS.textSecondary, fontSize: "0.9rem", textAlign: "center", maxWidth: 350 }}>
+          Click “Add New” to add your public channel or group. The bot must be an administrator in the chat.
         </Typography>
 
-        <Box sx={{ mt: 2, width: 319 }}>
+        <Box sx={{ mt: 2, width: "100%", maxWidth: 350 }}>
           <Button
             variant="contained"
-            onClick={() => {
-              window.open("https://t.me/gocherbot=true", "_blank");
-            }}
+            href={TELEGRAM_BOT_ADD_URL} // Use href for link
+            target="_blank" // Open in a new tab
+            rel="noopener noreferrer" // Security best practice for target="_blank"
             sx={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4,
-              fontWeight: "bold",
-              fontSize: 15,
-              backgroundColor: "#ffffff",
-              color: "#000000ff",
-              border: "2px solid #e5ff00ff",
-              borderRadius: 8,
-              boxShadow: "none",
-              transition: "all 0.3s ease",
-              minHeight: 48,
-              px: 3,
-              width: "100%",
-              justifyContent: "center",
-              "&:hover": {
-                backgroundColor: "#eaff00ff",
-                color: "#000000ff",
-                boxShadow: "0 0 10px #00f2ff55",
-              },
-              textTransform: "none",
+                fontWeight: "bold", fontSize: 15, backgroundColor: COLORS.text, color: "#000",
+                border: "2px solid #e5ff00ff", borderRadius: 8, boxShadow: "none", width: "100%",
+                minHeight: 48, textTransform: "none", display: "flex", gap: 1,
+                "&:hover": { backgroundColor: COLORS.accentHover, boxShadow: "0 0 10px #00f2ff55" },
             }}
           >
-            <img
-              src="/icons/plus.svg"
-              alt="Plus"
-              style={{ width: 28, height: 28 }}
-              draggable={false}
-            />
+            <img src="/icons/plus.svg" alt="Plus Icon" style={{ width: 28, height: 28 }} />
             Add New Group or Channel
           </Button>
 
           <Box sx={{ mt: 5 }}>
-            <Typography
-              variant="subtitle2"
-              sx={{
-                color: "#aeaeaeff",
-                mb: 1.5,
-                fontWeight: "medium",
-                fontSize: "1rem",
-                lineHeight: 1.2,
-              }}
-            >
+            <Typography variant="subtitle2" sx={{ color: COLORS.textMuted, mb: 1.5, fontWeight: "medium" }}>
               Recent Channels and Groups
             </Typography>
+            
+            {error && <Typography color="error" sx={{ textAlign: 'center', mb: 2 }}>{error}</Typography>}
 
-            {/* اینجا باکس با لیست کانال */}
-            <Box
-              sx={{
-                mt: 1,
-                px: 2,
-                py: 2.5,
-                borderRadius: 2,
-                border: "1px solid #666",
-                bgcolor: "#2c2c2c",
-                color: "#ccc",
-                display: "flex",
-                flexDirection: "column",
-                gap: 1,
-                height: calculatedHeight,
-                overflowY: channels.length * itemHeight + baseHeight > maxHeight ? "auto" : "hidden",
-                transition: "height 0.3s ease",
+            <Box sx={{
+                px: 2, py: 2.5, borderRadius: 2, border: `1px solid ${COLORS.border}`,
+                bgcolor: COLORS.listBg, color: "#ccc", display: "flex", flexDirection: "column",
+                gap: 1, height: calculatedHeight, overflowY: "auto", transition: "height 0.3s ease",
               }}
             >
               {channels.length === 0 ? (
-                <Typography
-                  variant="body2"
-                  sx={{ fontSize: "0.9rem", textAlign: "center", mt: "auto", mb: "auto" }}
-                >
-                  Your Gifts will appear here
+                <Typography variant="body2" sx={{ textAlign: "center", m: "auto" }}>
+                  Your added groups will appear here.
                 </Typography>
               ) : (
                 channels.map((channel) => (
                   <Box
                     key={channel.channel_id}
                     sx={{
-                      px: 2,
-                      py: 1,
-                      borderRadius: 1,
-                      bgcolor: "#444",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      fontSize: "0.9rem",
-                      minHeight: itemHeight - 10,
+                      px: 2, py: 1, borderRadius: 1, bgcolor: COLORS.listItemBg, display: "flex",
+                      alignItems: "center", justifyContent: "space-between",
+                      minHeight: LIST_DIMENSIONS.itemHeight - 10,
                     }}
                   >
-                    <Typography noWrap sx={{ maxWidth: "70%" }}>
-                      {channel.title}
-                    </Typography>
+                    <Typography noWrap sx={{ maxWidth: "70%" }}>{channel.title}</Typography>
                     <Typography variant="caption">{channel.type}</Typography>
                   </Box>
                 ))
@@ -237,45 +198,19 @@ export default function AddGroupPage() {
         </Box>
       </Box>
 
-      {/* بخش پایین شامل گرادینت */}
       <Box sx={{ position: "relative", width: "100%" }}>
-        {gradientAnimation && (
-          <Box
-            sx={{
-              position: "fixed",
-              bottom: "100px",
-              left: 0,
-              width: "100%",
-              height: 85,
-              pointerEvents: "none",
-              zIndex: 0,
-              transform: "scaleX(-1)",
-            }}
-          >
-            <Lottie animationData={gradientAnimation} loop={true} />
-          </Box>
-        )}
+        {gradientAnimation && <Box sx={{ position: "fixed", bottom: "100px", left: 0, width: "100%", height: 85, pointerEvents: "none", zIndex: 0, transform: "scaleX(-1)" }} >
+          <Lottie animationData={gradientAnimation} loop={true} />
+        </Box>}
       </Box>
 
-      {/* دکمه Confirm ثابت پایین صفحه */}
       <Button
         variant="contained"
         fullWidth
         sx={{
-          position: "fixed",
-          bottom: 65,
-          left: 0,
-          right: 0,
-          borderRadius: 8,
-          fontWeight: "bold",
-          backgroundColor: "#e9ce02ff",
-          color: "#000",
-          boxShadow: "none",
-          maxWidth: 400,
-          margin: "0 auto",
-          "&:hover": {
-            backgroundColor: "#e9ce02ff",
-          },
+          position: "fixed", bottom: 65, left: 0, right: 0, borderRadius: 8, fontWeight: "bold",
+          backgroundColor: COLORS.accent, color: "#000", boxShadow: "none", maxWidth: 400,
+          margin: "0 auto", "&:hover": { backgroundColor: COLORS.accent },
         }}
         onClick={handleConfirm}
       >
