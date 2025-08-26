@@ -1,107 +1,126 @@
-// pages/api/bot1.js
-
 export default async function handler(req, res) {
+  const token = process.env.BOT_TOKEN; // توکن رو از Environment Variables بگیر
+  const channel = "@gocher_community";
+
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+    return res.status(405).send("Method Not Allowed");
   }
 
-  const update = req.body;
+  const data = req.body;
 
-  const token = process.env.TELEGRAM_BOT1_TOKEN;
-  const channel = process.env.TELEGRAM_CHANNEL;
+  // دریافت پیام اولیه از کاربر
+  if (data.message) {
+    const chat_id = data.message.chat.id;
+    const text = data.message.text;
 
-  async function sendTelegramRequest(method, params) {
-    const url = `https://api.telegram.org/bot${token}/${method}`;
-    const query = new URLSearchParams(params);
-    await fetch(`${url}?${query.toString()}`);
-  }
+    if (text === "/start") {
+      // بررسی عضویت کاربر در کانال
+      const check = await fetch(
+        `https://api.telegram.org/bot${token}/getChatMember?chat_id=${channel}&user_id=${chat_id}`
+      ).then((r) => r.json());
 
-  try {
-    // ---------------------------
-    // بخش پیام متنی /start
-    // ---------------------------
-    if (update.message) {
-      const chat_id = update.message.chat.id;
-      const text = update.message.text ?? "";
+      const status = check?.result?.status || "left";
 
-      if (text === "/start") {
-        // بررسی عضویت
-        const checkResp = await fetch(`https://api.telegram.org/bot${token}/getChatMember?chat_id=${channel}&user_id=${chat_id}`);
-        const check = await checkResp.json();
-        const status = check.result?.status ?? "left";
-
-        // ارسال عکس اولیه
-        await sendTelegramRequest("sendPhoto", {
-          chat_id,
-          photo: "https://example.com/your-image.jpg",
-          caption: "🎁 Welcome to Gocher Giveaway!"
-        });
-
-        if (["member", "administrator", "creator"].includes(status)) {
-          // ✅ عضو است → فقط پیام WebApp
-          await sendTelegramRequest("sendMessage", {
+      // 🔽 ارسال عکس مشترک در ابتدا
+      await fetch(
+        `https://api.telegram.org/bot${token}/sendPhoto?` +
+          new URLSearchParams({
             chat_id,
-            text: "✅ You're in! Enjoy the giveaway or explore more 👇",
-            reply_markup: JSON.stringify({
-              inline_keyboard: [
-                [{ text: "🚀 Open Gocher", web_app: { url: "https://gocher.ir" } }]
-              ]
-            })
-          });
-        } else {
-          // ❌ عضو نیست → پیام عضویت
-          const message = "🎉 Launch and join Gifts Giveaway in Telegram!\n\nEasily create giveaways and automatically select winners 🎁";
-          await sendTelegramRequest("sendMessage", {
-            chat_id,
-            text: message,
-            reply_markup: JSON.stringify({
-              inline_keyboard: [
-                [{ text: "join community", url: "https://t.me/" + channel.replace("@","") }],
-                [{ text: "✅ Joined", callback_data: "check_join" }]
-              ]
-            })
-          });
-        }
-      }
-    }
-
-    // ---------------------------
-    // بخش Callback Query (دکمه ✅ Joined)
-    // ---------------------------
-    if (update.callback_query) {
-      const chat_id = update.callback_query.from.id;
-      const callback_id = update.callback_query.id;
-      const message_id = update.callback_query.message.message_id;
-
-      const checkResp = await fetch(`https://api.telegram.org/bot${token}/getChatMember?chat_id=${channel}&user_id=${chat_id}`);
-      const check = await checkResp.json();
-      const status = check.result?.status ?? "left";
+            photo: "https://example.com/your-image.jpg", // 🔁 لینک عکس دلخواه
+            caption: "🎁 Welcome to Gocher Giveaway!",
+          })
+      );
 
       if (["member", "administrator", "creator"].includes(status)) {
-        // حذف پیام قبلی و ارسال WebApp
-        await sendTelegramRequest("deleteMessage", { chat_id, message_id });
-        await sendTelegramRequest("sendMessage", {
-          chat_id,
-          text: "✅ You're in! Enjoy the giveaway or explore more 👇",
-          reply_markup: JSON.stringify({
-            inline_keyboard: [
-              [{ text: "🚀 Open Gocher", web_app: { url: "https://gocher.ir" } }]
-            ]
-          })
-        });
+        // ✅ عضو است → فقط پیام دوم (مینی‌اپ) را بفرست
+        const keyboard = {
+          inline_keyboard: [
+            [
+              {
+                text: "🚀 Open Gocher",
+                web_app: { url: "https://gocher.ir" },
+              },
+            ],
+          ],
+        };
+
+        await fetch(
+          `https://api.telegram.org/bot${token}/sendMessage?` +
+            new URLSearchParams({
+              chat_id,
+              text: "✅ You're in! Enjoy the giveaway or explore more 👇",
+              reply_markup: JSON.stringify(keyboard),
+            })
+        );
       } else {
-        // ❌ هنوز عضو نیست
-        await sendTelegramRequest("answerCallbackQuery", {
-          callback_query_id: callback_id,
-          text: "❌ Please join the channel first using the button above.",
-          show_alert: true
-        });
+        // ❌ عضو نیست → پیام عضویت ارسال شود
+        const message =
+          "🎉 Launch and join Gifts Giveaway in Telegram!\n\nEasily create giveaways and automatically select winners 🎁";
+
+        const keyboard = {
+          inline_keyboard: [
+            [{ text: "join community", url: "https://t.me/gocher_community" }],
+            [{ text: "✅ Joined", callback_data: "check_join" }],
+          ],
+        };
+
+        await fetch(
+          `https://api.telegram.org/bot${token}/sendMessage?` +
+            new URLSearchParams({
+              chat_id,
+              text: message,
+              reply_markup: JSON.stringify(keyboard),
+            })
+        );
       }
     }
-
-    return res.status(200).send("OK");
-  } catch (err) {
-    console.error("Error in bot1:", err);
-    return res.status(500).json({ error: "Internal Server Error" });
   }
+
+  // بررسی عضویت وقتی کاربر دکمه "✅ Joined" را بزند
+  if (data.callback_query) {
+    const chat_id = data.callback_query.from.id;
+    const callback_id = data.callback_query.id;
+    const message_id = data.callback_query.message.message_id;
+
+    const check = await fetch(
+      `https://api.telegram.org/bot${token}/getChatMember?chat_id=${channel}&user_id=${chat_id}`
+    ).then((r) => r.json());
+
+    const status = check?.result?.status || "left";
+
+    if (["member", "administrator", "creator"].includes(status)) {
+      // ✅ عضو است → حذف پیام و ارسال وب‌اپ
+      await fetch(
+        `https://api.telegram.org/bot${token}/deleteMessage?` +
+          new URLSearchParams({ chat_id, message_id })
+      );
+
+      const keyboard = {
+        inline_keyboard: [
+          [{ text: "🚀 Open Gocher", web_app: { url: "https://gocher.ir" } }],
+        ],
+      };
+
+      await fetch(
+        `https://api.telegram.org/bot${token}/sendMessage?` +
+          new URLSearchParams({
+            chat_id,
+            text: "✅ You're in! Enjoy the giveaway or explore more 👇",
+            reply_markup: JSON.stringify(keyboard),
+          })
+      );
+    } else {
+      // ❌ هنوز عضو نیست
+      await fetch(
+        `https://api.telegram.org/bot${token}/answerCallbackQuery?` +
+          new URLSearchParams({
+            callback_query_id: callback_id,
+            text: "❌ Please join the channel first using the button above.",
+            show_alert: "true",
+          })
+      );
+    }
+  }
+
+  return res.status(200).send("ok");
 }
