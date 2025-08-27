@@ -16,18 +16,19 @@ export default function CreatePage() {
   const steps = ["Gift selection", "Terms", "Confirmation"];
   const [currentStep, setCurrentStep] = useState(0);
 
-  // 🎯 ذخیره کاربر بلافاصله با Login Widget یا Mini App initData
-  useEffect(() => {
+useEffect(() => {
+  console.log("CreatePage component mounted. Checking for Telegram user...");
+
   if (typeof window !== "undefined" && window.Telegram?.WebApp) {
     const tg = window.Telegram.WebApp;
     const userData = tg.initDataUnsafe?.user;
 
     if (userData) {
-      setUser(userData); // فقط برای وضعیت React
-      console.log("Mini App User:", userData);
+      setUser(userData);
+      console.log("✅ Step 1: User data FOUND in Mini App:", userData);
 
-      // ذخیره در Supabase
       const saveUser = async () => {
+        console.log("⏳ Step 2: Preparing to save user to Supabase...");
         try {
           const { data, error } = await supabase
             .from("users")
@@ -45,19 +46,30 @@ export default function CreatePage() {
               { onConflict: "id" }
             );
 
-          if (error) throw error;
-          console.log("Saved to Supabase:", data);
+          // ‼️ این بخش مهم‌ترین قسمت است ‼️
+          // ما خطا را در هر صورت لاگ می‌گیریم، حتی اگر null باشد
+          console.log("📄 Step 3: Supabase response received. Error object:", error);
+          console.log("📄 Step 3: Supabase response received. Data object:", data);
+
+          if (error) {
+            // اگر خطایی وجود داشته باشد، آن را به شکل واضح‌تری نمایش می‌دهیم
+            throw new Error(`Supabase Error: ${error.message} | Details: ${error.details}`);
+          }
+          
+          console.log("✅ Step 4: User saved successfully!");
+
         } catch (err) {
-          console.error("Supabase insert error:", err.message);
+          // هر خطایی که رخ دهد، اینجا نمایش داده می‌شود
+          console.error("❌ Step 4 FAILED: An error occurred during saveUser:", err);
         }
       };
 
       saveUser();
+    } else {
+      console.log("❌ Step 1 FAILED: User data NOT FOUND in Mini App.");
     }
   }
 }, []);
-
-
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -69,7 +81,13 @@ export default function CreatePage() {
       setCurrentStep(nextStep);
       router.replace(`/create?step=${nextStep}`, undefined, { shallow: true });
     } else {
-      window.location.href = "https://t.me/G";
+      // این بخش هم باید اصلاح شود اگر می‌خواهید لینک تلگرام باز کنید
+      const finalUrl = "https://t.me/G";
+      if (window.Telegram && window.Telegram.WebApp) {
+        window.Telegram.WebApp.openTelegramLink(finalUrl);
+      } else {
+        window.location.href = finalUrl;
+      }
     }
   };
 
@@ -78,6 +96,17 @@ export default function CreatePage() {
       const prevStep = currentStep - 1;
       setCurrentStep(prevStep);
       router.replace(`/create?step=${prevStep}`, undefined, { shallow: true });
+    }
+  };
+
+  // ✅ تابع جدید و صحیح برای دکمه Add Gift
+  const handleAddGiftClick = () => {
+    const url = "https://t.me/Gocherbot";
+    if (window.Telegram && window.Telegram.WebApp) {
+      window.Telegram.WebApp.openTelegramLink(url);
+    } else {
+      // برای تست در مرورگر عادی
+      window.open(url, "_blank");
     }
   };
 
@@ -110,7 +139,6 @@ export default function CreatePage() {
         <Box sx={{ position: "absolute", top: "32px", left: "8%", right: "8%", height: 4, bgcolor: "#888", borderRadius: 2, zIndex: 0 }}>
           <Box sx={{ height: "100%", width: `${(currentStep / (steps.length - 1)) * 100}%`, bgcolor: "#00f2ffff", transition: "width 0.4s ease" }} />
         </Box>
-
         {steps.map((step, index) => {
           const isActive = index <= currentStep;
           return (
@@ -129,34 +157,23 @@ export default function CreatePage() {
         <Box sx={{ textAlign: "center", mt: 6 }}>
           <img src="/animations/gift.gif" alt="Gift animation" style={{ width: 190, height: 135, borderRadius: 16 }} />
 
+          {/* ✅ دکمه اصلاح شده */}
           <Button
             variant="contained"
-            onClick={() => (window.location.href = "https://t.me/Gocherbot")}
+            onClick={handleAddGiftClick} // استفاده از تابع صحیح
             sx={{
-              mt: 3,
-              borderRadius: 2,
-              width: 280,
-              bgcolor: "#757575",
-              color: "white",
-              position: "relative",
-              overflow: "hidden",
-              fontWeight: "bold",
+              mt: 3, borderRadius: 2, width: 280, bgcolor: "#757575", color: "white",
+              position: "relative", overflow: "hidden", fontWeight: "bold",
               "&:hover": { bgcolor: "#9e9e9e" },
               "&::before": {
-                content: '""',
-                position: "absolute",
-                top: 0,
-                left: "-75%",
-                width: "50%",
-                height: "100%",
+                content: '""', position: "absolute", top: 0, left: "-75%", width: "50%", height: "100%",
                 background: "linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0) 100%)",
-                transform: "skewX(-20deg)",
-                animation: "shiny 1.5s infinite",
+                transform: "skewX(-20deg)", animation: "shiny 1.5s infinite",
               },
               "@keyframes shiny": { "0%": { left: "-75%" }, "100%": { left: "125%" } },
             }}
           >
-            Add Gift
+            Add New Gift
           </Button>
 
           <Typography sx={{ mt: 2, color: "#bbb", fontSize: "0.9rem", maxWidth: 320, mx: "auto" }}>
