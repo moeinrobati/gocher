@@ -19,35 +19,44 @@ export default function CreatePage() {
   // 🎯 ذخیره کاربر بلافاصله با Login Widget یا Mini App initData
   useEffect(() => {
   if (typeof window !== "undefined" && window.Telegram?.WebApp) {
-    // 🎯 تابع ذخیره‌سازی خودکار کاربر
-    window.onTelegramAuth = async (userData) => {
-      try {
-        await supabase
-          .from("users")
-          .upsert(
-            {
-              id: userData.id,
-              first_name: userData.first_name,
-              last_name: userData.last_name,
-              username: userData.username,
-              photo_url: userData.photo_url,
-              is_premium: userData.is_premium,
-              language_code: userData.language_code,
-              allows_write_to_pm: userData.allows_write_to_pm,
-            },
-            { onConflict: "id" }
-          );
-      } catch (err) {
-        console.error("Supabase insert error:", err.message);
-      }
-    };
+    const tg = window.Telegram.WebApp;
+    const userData = tg.initDataUnsafe?.user;
 
-    // Mini App: اگر initData موجود باشه، ذخیره خودکار
-    if (window.Telegram.WebApp.initDataUnsafe?.user) {
-      window.onTelegramAuth(window.Telegram.WebApp.initDataUnsafe.user);
+    if (userData) {
+      setUser(userData); // فقط برای وضعیت React
+      console.log("Mini App User:", userData);
+
+      // ذخیره در Supabase
+      const saveUser = async () => {
+        try {
+          const { data, error } = await supabase
+            .from("users")
+            .upsert(
+              {
+                id: userData.id,
+                first_name: userData.first_name,
+                last_name: userData.last_name,
+                username: userData.username,
+                photo_url: userData.photo_url,
+                is_premium: userData.is_premium,
+                language_code: userData.language_code,
+                allows_write_to_pm: userData.allows_write_to_pm,
+              },
+              { onConflict: "id" }
+            );
+
+          if (error) throw error;
+          console.log("Saved to Supabase:", data);
+        } catch (err) {
+          console.error("Supabase insert error:", err.message);
+        }
+      };
+
+      saveUser();
     }
   }
 }, []);
+
 
 
   useEffect(() => {
