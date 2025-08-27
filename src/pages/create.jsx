@@ -18,45 +18,38 @@ export default function CreatePage() {
   const steps = ["Gift selection", "Terms", "Confirmation"];
   const [currentStep, setCurrentStep] = useState(0);
 
+  // 🎯 استفاده از Telegram Login Widget به جای initData
   useEffect(() => {
-    if (typeof window !== "undefined" && window.Telegram?.WebApp) {
-      const tg = window.Telegram.WebApp;
-      const userData = tg.initDataUnsafe?.user || null;
-
-      if (userData) {
+    if (typeof window !== "undefined") {
+      window.onTelegramAuth = async (userData) => {
         setUser(userData);
-        console.log("User Data:", userData);
+        console.log("Telegram Login Widget User:", userData);
 
-        const saveUser = async () => {
-          try {
-            const { data, error } = await supabase
-              .from("users")
-              .upsert(
-                {
-                  id: userData.id,
-                  first_name: userData.first_name,
-                  last_name: userData.last_name,
-                  username: userData.username,
-                  photo_url: userData.photo_url,
-                  is_premium: userData.is_premium,
-                  language_code: userData.language_code,
-                  allows_write_to_pm: userData.allows_write_to_pm,
-                },
-                { onConflict: "id" }
-              );
+        try {
+          const { data, error } = await supabase
+            .from("users")
+            .upsert(
+              {
+                id: userData.id,
+                first_name: userData.first_name,
+                last_name: userData.last_name,
+                username: userData.username,
+                photo_url: userData.photo_url,
+                is_premium: userData.is_premium,
+                language_code: userData.language_code,
+                allows_write_to_pm: userData.allows_write_to_pm,
+              },
+              { onConflict: "id" }
+            );
 
-            if (error) throw error;
-            console.log("Saved to Supabase:", data);
-          } catch (err) {
-            console.error("Supabase insert error:", err.message);
-          }
-        };
-
-        saveUser();
-      }
+          if (error) throw error;
+          console.log("Saved to Supabase:", data);
+        } catch (err) {
+          console.error("Supabase insert error:", err.message);
+        }
+      };
     }
   }, []);
-
 
   // اسکرول به بالا هنگام تغییر step
   useEffect(() => {
@@ -192,41 +185,61 @@ export default function CreatePage() {
             alt="Gift animation"
             style={{ width: 190, height: 135, borderRadius: 16 }}
           />
-          <Button
-            variant="contained"
-            onClick={() => (window.location.href = "https://t.me/Gocherbot")}
-            sx={{
-              mt: 3,
-              borderRadius: 2,
-              width: 280,
-              bgcolor: "#757575",
-              color: "white",
-              position: "relative",
-              overflow: "hidden",
-              transition: "background-color 0.3s ease",
-              "&:hover": {
-                bgcolor: "#9e9e9e",
-              },
-              "&::before": {
-                content: '""',
-                position: "absolute",
-                top: 0,
-                left: "-75%",
-                width: "50%",
-                height: "100%",
-                background:
-                  "linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0) 100%)",
-                transform: "skewX(-20deg)",
-                animation: "shiny 1.5s infinite",
-              },
-              "@keyframes shiny": {
-                "0%": { left: "-75%" },
-                "100%": { left: "125%" },
-              },
-            }}
-          >
-            Add New Gift
-          </Button>
+
+<Button
+  variant="contained"
+  onClick={() => {
+    if (!user) {
+      // Telegram Login
+      if (typeof window !== "undefined") {
+        const tgScript = document.createElement("script");
+        tgScript.src = "https://telegram.org/js/telegram-widget.js?22";
+        tgScript.setAttribute("data-telegram-login", "Gocherbot");
+        tgScript.setAttribute("data-size", "large");
+        tgScript.setAttribute("data-radius", "20");
+        tgScript.setAttribute("data-request-access", "write");
+        tgScript.setAttribute("data-onauth", "onTelegramAuth(user)");
+        tgScript.async = true;
+        document.body.appendChild(tgScript);
+      }
+    } else {
+      // کاربر لاگین کرده، هدایت به لینک هدیه
+      window.location.href = "https://t.me/Gocherbot";
+    }
+  }}
+  sx={{
+    mt: 3,
+    borderRadius: 2,
+    width: 280,
+    bgcolor: "#757575",
+    color: "white",
+    position: "relative",
+    overflow: "hidden",
+    fontWeight: "bold",
+    "&:hover": {
+      bgcolor: "#9e9e9e",
+    },
+    "&::before": {
+      content: '""',
+      position: "absolute",
+      top: 0,
+      left: "-75%",
+      width: "50%",
+      height: "100%",
+      background:
+        "linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0) 100%)",
+      transform: "skewX(-20deg)",
+      animation: "shiny 1.5s infinite",
+    },
+    "@keyframes shiny": {
+      "0%": { left: "-75%" },
+      "100%": { left: "125%" },
+    },
+  }}
+>
+  Add New Gift
+</Button>
+
 
           <Typography
             sx={{
@@ -263,7 +276,6 @@ export default function CreatePage() {
       )}
 
       {currentStep === 1 && <StepTerms gift="terms" onNext={handleNextStep} />}
-
       {currentStep === 2 && <StepConfirmation gift="confirm" onNext={handleNextStep} />}
 
       {/* Bottom Button fixed */}
