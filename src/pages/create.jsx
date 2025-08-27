@@ -4,11 +4,7 @@ import { Box, Typography, Button, IconButton } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import StepTerms from "../components/StepTerms";
 import StepConfirmation from "../components/StepConfirmation";
-import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function CreatePage() {
   const router = useRouter();
@@ -16,46 +12,6 @@ export default function CreatePage() {
   const steps = ["Gift selection", "Terms", "Confirmation"];
   const [currentStep, setCurrentStep] = useState(0);
 
-// داخل useEffect بالا (برای ذخیره کاربر)
-useEffect(() => {
-  if (typeof window !== "undefined" && window.Telegram?.WebApp) {
-    const tg = window.Telegram.WebApp;
-    const userData = tg.initDataUnsafe?.user;
-
-    if (userData) {
-      setUser(userData);
-      console.log("Mini App User:", userData);
-
-      // ذخیره در Supabase
-      const saveUser = async () => {
-        try {
-          const { data, error } = await supabase
-            .from("users")
-            .upsert(
-              {
-                id: userData.id,
-                first_name: userData.first_name,
-                last_name: userData.last_name,
-                username: userData.username,
-                photo_url: userData.photo_url,
-                is_premium: userData.is_premium,
-                language_code: userData.language_code,
-                allows_write_to_pm: userData.allows_write_to_pm,
-              },
-              { onConflict: "id" }
-            );
-
-          if (error) throw error;
-          console.log("Saved to Supabase:", data);
-        } catch (err) {
-          console.error("Supabase insert error:", err.message);
-        }
-      };
-
-      saveUser();
-    }
-  }
-}, []);
 
 
 
