@@ -16,19 +16,18 @@ export default function CreatePage() {
   const steps = ["Gift selection", "Terms", "Confirmation"];
   const [currentStep, setCurrentStep] = useState(0);
 
+// داخل useEffect بالا (برای ذخیره کاربر)
 useEffect(() => {
-  console.log("CreatePage component mounted. Checking for Telegram user...");
-
   if (typeof window !== "undefined" && window.Telegram?.WebApp) {
     const tg = window.Telegram.WebApp;
     const userData = tg.initDataUnsafe?.user;
 
     if (userData) {
       setUser(userData);
-      console.log("✅ Step 1: User data FOUND in Mini App:", userData);
+      console.log("Mini App User:", userData);
 
+      // ذخیره در Supabase
       const saveUser = async () => {
-        console.log("⏳ Step 2: Preparing to save user to Supabase...");
         try {
           const { data, error } = await supabase
             .from("users")
@@ -46,30 +45,19 @@ useEffect(() => {
               { onConflict: "id" }
             );
 
-          // ‼️ این بخش مهم‌ترین قسمت است ‼️
-          // ما خطا را در هر صورت لاگ می‌گیریم، حتی اگر null باشد
-          console.log("📄 Step 3: Supabase response received. Error object:", error);
-          console.log("📄 Step 3: Supabase response received. Data object:", data);
-
-          if (error) {
-            // اگر خطایی وجود داشته باشد، آن را به شکل واضح‌تری نمایش می‌دهیم
-            throw new Error(`Supabase Error: ${error.message} | Details: ${error.details}`);
-          }
-          
-          console.log("✅ Step 4: User saved successfully!");
-
+          if (error) throw error;
+          console.log("Saved to Supabase:", data);
         } catch (err) {
-          // هر خطایی که رخ دهد، اینجا نمایش داده می‌شود
-          console.error("❌ Step 4 FAILED: An error occurred during saveUser:", err);
+          console.error("Supabase insert error:", err.message);
         }
       };
 
       saveUser();
-    } else {
-      console.log("❌ Step 1 FAILED: User data NOT FOUND in Mini App.");
     }
   }
 }, []);
+
+
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -158,23 +146,43 @@ useEffect(() => {
           <img src="/animations/gift.gif" alt="Gift animation" style={{ width: 190, height: 135, borderRadius: 16 }} />
 
           {/* ✅ دکمه اصلاح شده */}
-          <Button
-            variant="contained"
-            onClick={handleAddGiftClick} // استفاده از تابع صحیح
-            sx={{
-              mt: 3, borderRadius: 2, width: 280, bgcolor: "#757575", color: "white",
-              position: "relative", overflow: "hidden", fontWeight: "bold",
-              "&:hover": { bgcolor: "#9e9e9e" },
-              "&::before": {
-                content: '""', position: "absolute", top: 0, left: "-75%", width: "50%", height: "100%",
-                background: "linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0) 100%)",
-                transform: "skewX(-20deg)", animation: "shiny 1.5s infinite",
-              },
-              "@keyframes shiny": { "0%": { left: "-75%" }, "100%": { left: "125%" } },
-            }}
-          >
-            Add New Gift
-          </Button>
+<Button
+  variant="contained"
+  onClick={() => {
+    // فقط هدایت به @Gocherbot
+    window.location.href = "https://t.me/Gocherbot";
+  }}
+  sx={{
+    mt: 3,
+    borderRadius: 2,
+    width: 280,
+    bgcolor: "#757575",
+    color: "white",
+    fontWeight: "bold",
+    position: "relative",
+    overflow: "hidden",
+    "&:hover": { bgcolor: "#9e9e9e" },
+    "&::before": {
+      content: '""',
+      position: "absolute",
+      top: 0,
+      left: "-75%",
+      width: "50%",
+      height: "100%",
+      background:
+        "linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0) 100%)",
+      transform: "skewX(-20deg)",
+      animation: "shiny 1.5s infinite",
+    },
+    "@keyframes shiny": {
+      "0%": { left: "-75%" },
+      "100%": { left: "125%" },
+    },
+  }}
+>
+  Add New Gift
+</Button>
+
 
           <Typography sx={{ mt: 2, color: "#bbb", fontSize: "0.9rem", maxWidth: 320, mx: "auto" }}>
             Send collectible gifts to @Gocherbot, then select one or more below to include in your giveaway.

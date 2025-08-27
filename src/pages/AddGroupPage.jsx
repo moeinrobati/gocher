@@ -109,20 +109,19 @@ export default function AddGroupPage() {
   };
 
 const handleAddGroupClick = () => {
-const url = "https://t.me/gocherbot?startattach=addGift&choose=groups+channels";
+  // ✅ از این URL استاندارد و ساده استفاده کنید
+  const url = "https://t.me/gocherbot?startgroup=true";
 
+  // بقیه کد شما که بسیار عالی نوشته شده، بدون تغییر باقی می‌ماند
   if (window.Telegram && window.Telegram.WebApp) {
     const tg = window.Telegram.WebApp;
     tg.ready();
 
     if (typeof tg.openTelegramLink === "function") {
-      console.log("using openTelegramLink");
       tg.openTelegramLink(url);
     } else if (typeof tg.openLink === "function") {
-      console.log("using openLink");
       tg.openLink(url, { try_instant_view: false });
     } else {
-      console.log("fallback window.open");
       window.open(url, "_blank");
     }
   } else {
