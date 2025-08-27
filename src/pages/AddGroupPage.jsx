@@ -108,23 +108,17 @@ export default function AddGroupPage() {
     router.push("/create?step=1");
   };
 
-const handleAddGroupClick = () => {
-  // ✅ از این URL استاندارد و ساده استفاده کنید
+const handleAddBotToChat = () => {
+  // این URL استاندارد برای باز کردن انتخاب‌گر گروه/کانال است
   const url = "https://t.me/gocherbot?startgroup=true";
 
-  // بقیه کد شما که بسیار عالی نوشته شده، بدون تغییر باقی می‌ماند
+  // ابتدا چک می‌کنیم که در محیط مینی‌اپ هستیم
   if (window.Telegram && window.Telegram.WebApp) {
-    const tg = window.Telegram.WebApp;
-    tg.ready();
-
-    if (typeof tg.openTelegramLink === "function") {
-      tg.openTelegramLink(url);
-    } else if (typeof tg.openLink === "function") {
-      tg.openLink(url, { try_instant_view: false });
-    } else {
-      window.open(url, "_blank");
-    }
+    // از طریق API خود تلگرام به آن دستور می‌دهیم لینک را باز کند
+    window.Telegram.WebApp.openTelegramLink(url);
   } else {
+    // این بخش فقط برای تست در مرورگر معمولی اجرا می‌شود
+    console.log("Not in Telegram Mini App, falling back to window.open");
     window.open(url, "_blank");
   }
 };
@@ -163,7 +157,7 @@ const handleAddGroupClick = () => {
           {/* CORRECTED BUTTON FOR TELEGRAM MINI APP */}
           <Button
             variant="contained"
-            onClick={handleAddGroupClick} // Use onClick to call the handler
+            onClick={handleAddBotToChat} // Use onClick to call the handler
             sx={{
                 fontWeight: "bold", fontSize: 15, backgroundColor: COLORS.text, color: "#000",
                 border: "2px solid #e5ff00ff", borderRadius: 8, boxShadow: "none", width: "100%",
