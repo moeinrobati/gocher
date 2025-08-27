@@ -109,7 +109,7 @@ export default function AddGroupPage() {
   };
 
 const handleAddGroupClick = () => {
-const url = "https://t.me/gocherbot?startattach&choose=groups";
+const url = "https://t.me/gocherbot?startattach=addGift&choose=groups+channels";
 
   if (window.Telegram && window.Telegram.WebApp) {
     const tg = window.Telegram.WebApp;
