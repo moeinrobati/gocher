@@ -108,19 +108,19 @@ export default function AddGroupPage() {
     router.push("/create?step=1");
   };
 
-  // Handler for opening the Telegram link in a Mini App
-  const handleAddGroupClick = () => {
-    const url = "https://t.me/gocherbot?startgroup=true";
+const handleAddGroupClick = () => {
+  const url = "https://t.me/gocherbot?startgroup=true";
 
-    if (window.Telegram && window.Telegram.WebApp) {
-      // Use the official Telegram Mini App method to open the link
-      window.Telegram.WebApp.openTelegramLink(url);
-    } else {
-      // Fallback for testing in a regular browser
-      window.open(url, "_blank");
-      console.warn("Telegram WebApp script not found. Using standard window.open().");
-    }
-  };
+  if (window.Telegram?.WebApp?.openTelegramLink) {
+    // داخل مینی‌اپ تلگرام
+    window.Telegram.WebApp.openTelegramLink(url);
+  } else {
+    // تست داخل مرورگر
+    window.open(url, "_blank");
+    console.warn("⚠️ Running outside Telegram Mini App. Using window.open instead.");
+  }
+};
+
 
   const calculatedHeight = Math.min(
     LIST_DIMENSIONS.baseHeight + channels.length * LIST_DIMENSIONS.itemHeight,
