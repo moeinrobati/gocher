@@ -4,8 +4,6 @@ import { Box, Typography, Button, IconButton } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import StepTerms from "../components/StepTerms";
 import StepConfirmation from "../components/StepConfirmation";
-
-// 1️⃣ ایمپورت Supabase و ایجاد کلاینت
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -18,9 +16,10 @@ export default function CreatePage() {
   const steps = ["Gift selection", "Terms", "Confirmation"];
   const [currentStep, setCurrentStep] = useState(0);
 
-  // 🎯 استفاده از Telegram Login Widget به جای initData
+  // 🎯 ذخیره کاربر بلافاصله با Login Widget یا Mini App initData
   useEffect(() => {
     if (typeof window !== "undefined") {
+      // تابعی که Telegram Login Widget صدا میزنه
       window.onTelegramAuth = async (userData) => {
         setUser(userData);
         console.log("Telegram Login Widget User:", userData);
@@ -48,10 +47,14 @@ export default function CreatePage() {
           console.error("Supabase insert error:", err.message);
         }
       };
+
+      // Mini App: اگر initData موجود باشه، ذخیره خودکار
+      if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
+        window.onTelegramAuth(window.Telegram.WebApp.initDataUnsafe.user);
+      }
     }
   }, []);
 
-  // اسکرول به بالا هنگام تغییر step
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [currentStep]);
@@ -89,89 +92,29 @@ export default function CreatePage() {
       {/* Header */}
       <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
         {currentStep > 0 && currentStep !== 2 && (
-          <IconButton
-            onClick={handleBack}
-            sx={{ color: "#19b3d2ff", mr: 1 }}
-            aria-label="back"
-          >
+          <IconButton onClick={handleBack} sx={{ color: "#19b3d2ff", mr: 1 }}>
             <ArrowBackIcon />
           </IconButton>
         )}
-
         <Typography variant="h6" component="h3" gutterBottom>
           Creating giveaway
         </Typography>
       </Box>
 
       {/* Stepper */}
-      <Box
-        sx={{
-          position: "relative",
-          height: 20,
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          px: 4,
-          mt: 3.5,
-          mb: 3,
-        }}
-      >
-        <Box
-          sx={{
-            position: "absolute",
-            top: "32px",
-            left: "8%",
-            right: "8%",
-            height: 4,
-            bgcolor: "#888",
-            borderRadius: 2,
-            zIndex: 0,
-          }}
-        >
-          <Box
-            sx={{
-              height: "100%",
-              width: `${(currentStep / (steps.length - 1)) * 100}%`,
-              bgcolor: "#00f2ffff",
-              transition: "width 0.4s ease",
-            }}
-          />
+      <Box sx={{ position: "relative", height: 20, display: "flex", alignItems: "flex-start", justifyContent: "space-between", px: 4, mt: 3.5, mb: 3 }}>
+        <Box sx={{ position: "absolute", top: "32px", left: "8%", right: "8%", height: 4, bgcolor: "#888", borderRadius: 2, zIndex: 0 }}>
+          <Box sx={{ height: "100%", width: `${(currentStep / (steps.length - 1)) * 100}%`, bgcolor: "#00f2ffff", transition: "width 0.4s ease" }} />
         </Box>
 
         {steps.map((step, index) => {
           const isActive = index <= currentStep;
           return (
-            <Box
-              key={index}
-              sx={{
-                position: "absolute",
-                left: index === 0 ? "8%" : index === 1 ? "50%" : "92%",
-                transform: "translateX(-50%)",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                zIndex: 1,
-              }}
-            >
-              <Typography
-                variant="caption"
-                sx={{
-                  mb: 1,
-                  fontSize: "0.75rem",
-                  color: isActive ? "#19b3d2ff" : "#888",
-                  fontWeight: isActive ? "bold" : "normal",
-                }}
-              >
+            <Box key={index} sx={{ position: "absolute", left: index === 0 ? "8%" : index === 1 ? "50%" : "92%", transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", zIndex: 1 }}>
+              <Typography variant="caption" sx={{ mb: 1, fontSize: "0.75rem", color: isActive ? "#19b3d2ff" : "#888", fontWeight: isActive ? "bold" : "normal" }}>
                 {step}
               </Typography>
-              <Box
-                sx={{
-                  width: 16,
-                  height: 16,
-                  borderRadius: "50%",
-                  bgcolor: isActive ? "#19b3d2ff" : "#888",
-                }}
-              />
+              <Box sx={{ width: 16, height: 16, borderRadius: "50%", bgcolor: isActive ? "#19b3d2ff" : "#888" }} />
             </Box>
           );
         })}
@@ -180,95 +123,44 @@ export default function CreatePage() {
       {/* Step content */}
       {currentStep === 0 && (
         <Box sx={{ textAlign: "center", mt: 6 }}>
-          <img
-            src="/animations/gift.gif"
-            alt="Gift animation"
-            style={{ width: 190, height: 135, borderRadius: 16 }}
-          />
+          <img src="/animations/gift.gif" alt="Gift animation" style={{ width: 190, height: 135, borderRadius: 16 }} />
 
-<Button
-  variant="contained"
-  onClick={() => {
-    if (!user) {
-      // Telegram Login
-      if (typeof window !== "undefined") {
-        const tgScript = document.createElement("script");
-        tgScript.src = "https://telegram.org/js/telegram-widget.js?22";
-        tgScript.setAttribute("data-telegram-login", "Gocherbot");
-        tgScript.setAttribute("data-size", "large");
-        tgScript.setAttribute("data-radius", "20");
-        tgScript.setAttribute("data-request-access", "write");
-        tgScript.setAttribute("data-onauth", "onTelegramAuth(user)");
-        tgScript.async = true;
-        document.body.appendChild(tgScript);
-      }
-    } else {
-      // کاربر لاگین کرده، هدایت به لینک هدیه
-      window.location.href = "https://t.me/Gocherbot";
-    }
-  }}
-  sx={{
-    mt: 3,
-    borderRadius: 2,
-    width: 280,
-    bgcolor: "#757575",
-    color: "white",
-    position: "relative",
-    overflow: "hidden",
-    fontWeight: "bold",
-    "&:hover": {
-      bgcolor: "#9e9e9e",
-    },
-    "&::before": {
-      content: '""',
-      position: "absolute",
-      top: 0,
-      left: "-75%",
-      width: "50%",
-      height: "100%",
-      background:
-        "linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0) 100%)",
-      transform: "skewX(-20deg)",
-      animation: "shiny 1.5s infinite",
-    },
-    "@keyframes shiny": {
-      "0%": { left: "-75%" },
-      "100%": { left: "125%" },
-    },
-  }}
->
-  Add New Gift
-</Button>
-
-
-          <Typography
+          <Button
+            variant="contained"
+            onClick={() => (window.location.href = "https://t.me/Gocherbot")}
             sx={{
-              mt: 2,
-              color: "#bbb",
-              fontSize: "0.9rem",
-              maxWidth: 320,
-              mx: "auto",
+              mt: 3,
+              borderRadius: 2,
+              width: 280,
+              bgcolor: "#757575",
+              color: "white",
+              position: "relative",
+              overflow: "hidden",
+              fontWeight: "bold",
+              "&:hover": { bgcolor: "#9e9e9e" },
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                top: 0,
+                left: "-75%",
+                width: "50%",
+                height: "100%",
+                background: "linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0) 100%)",
+                transform: "skewX(-20deg)",
+                animation: "shiny 1.5s infinite",
+              },
+              "@keyframes shiny": { "0%": { left: "-75%" }, "100%": { left: "125%" } },
             }}
           >
-            Send collectible gifts to @Gocherbot, then select one or more below to
-            include in your giveaway.
+            Add Gift
+          </Button>
+
+          <Typography sx={{ mt: 2, color: "#bbb", fontSize: "0.9rem", maxWidth: 320, mx: "auto" }}>
+            Send collectible gifts to @Gocherbot, then select one or more below to include in your giveaway.
           </Typography>
 
-          <Box
-            sx={{
-              mt: 5,
-              px: 3,
-              py: 2.5,
-              borderRadius: 2,
-              border: "1px solid #666",
-              bgcolor: "#2c2c2c",
-              color: "#ccc",
-            }}
-          >
-            <Typography
-              variant="body2"
-              sx={{ fontSize: "0.9rem", textAlign: "center" }}
-            >
+          <Box sx={{ mt: 5, px: 3, py: 2.5, borderRadius: 2, border: "1px solid #666", bgcolor: "#2c2c2c", color: "#ccc" }}>
+            <Typography variant="body2" sx={{ fontSize: "0.9rem", textAlign: "center" }}>
               Your Gifts will appear here
             </Typography>
           </Box>
@@ -279,32 +171,11 @@ export default function CreatePage() {
       {currentStep === 2 && <StepConfirmation gift="confirm" onNext={handleNextStep} />}
 
       {/* Bottom Button fixed */}
-      <Box
-        sx={{
-          position: "fixed",
-          bottom: 65,
-          left: 0,
-          right: 0,
-          display: "flex",
-          justifyContent: "center",
-          zIndex: 10,
-        }}
-      >
+      <Box sx={{ position: "fixed", bottom: 65, left: 0, right: 0, display: "flex", justifyContent: "center", zIndex: 10 }}>
         <Button
           variant="contained"
           onClick={handleNextStep}
-          sx={{
-            width: 400,
-            height: 40,
-            borderRadius: 3,
-            fontWeight: "bold",
-            fontSize: "1rem",
-            bgcolor: "#19b3d2ff",
-            color: "white",
-            "&:hover": {
-              bgcolor: "#118893ff",
-            },
-          }}
+          sx={{ width: 400, height: 40, borderRadius: 3, fontWeight: "bold", fontSize: "1rem", bgcolor: "#19b3d2ff", color: "white", "&:hover": { bgcolor: "#118893ff" } }}
         >
           Continue
         </Button>
