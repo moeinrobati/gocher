@@ -1,169 +1,38 @@
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/router";
-import { Box, Typography, Button, IconButton } from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+// src/pages/create.jsx
+import { useEffect, useState } from "react";
+import { isTMA, retrieveLaunchParams, postEvent, on, mockTelegramEnv } from "@telegram-apps/bridge";
 import StepTerms from "../components/StepTerms";
 import StepConfirmation from "../components/StepConfirmation";
 
-
 export default function CreatePage() {
-  const router = useRouter();
-  const steps = ["Gift selection", "Terms", "Confirmation"];
-  const [currentStep, setCurrentStep] = useState(0);
-
-
-
+  const [params, setParams] = useState(null);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [currentStep]);
-
-  const handleNextStep = () => {
-    if (currentStep < steps.length - 1) {
-      const nextStep = currentStep + 1;
-      setCurrentStep(nextStep);
-      router.replace(`/create?step=${nextStep}`, undefined, { shallow: true });
-    } else {
-      // این بخش هم باید اصلاح شود اگر می‌خواهید لینک تلگرام باز کنید
-      const finalUrl = "https://t.me/G";
-      if (window.Telegram && window.Telegram.WebApp) {
-        window.Telegram.WebApp.openTelegramLink(finalUrl);
-      } else {
-        window.location.href = finalUrl;
+    if (typeof window !== "undefined") {
+      if (!isTMA()) {
+        mockTelegramEnv(); // فقط تست محلی
       }
-    }
-  };
 
-  const handleBack = () => {
-    if (currentStep > 0) {
-      const prevStep = currentStep - 1;
-      setCurrentStep(prevStep);
-      router.replace(`/create?step=${prevStep}`, undefined, { shallow: true });
-    }
-  };
+      const launchParams = retrieveLaunchParams(true);
+      setParams(launchParams);
 
-  // ✅ تابع جدید و صحیح برای دکمه Add Gift
-  const handleAddGiftClick = () => {
-    const url = "https://t.me/Gocherbot";
-    if (window.Telegram && window.Telegram.WebApp) {
-      window.Telegram.WebApp.openTelegramLink(url);
-    } else {
-      // برای تست در مرورگر عادی
-      window.open(url, "_blank");
+      postEvent("web_app_setup_back_button", { is_visible: true });
+      const off = on("back_button_pressed", () => {
+        console.log("کاربر Back زد");
+        postEvent("web_app_setup_back_button", { is_visible: false });
+        off();
+      });
     }
-  };
+  }, []);
 
   return (
-    <Box
-      sx={{
-        p: 1.5,
-        color: "white",
-        minHeight: "100vh",
-        bgcolor: "#121212",
-        maxWidth: 700,
-        mx: "auto",
-        pb: 10,
-      }}
-    >
-      {/* Header */}
-      <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-        {currentStep > 0 && currentStep !== 2 && (
-          <IconButton onClick={handleBack} sx={{ color: "#19b3d2ff", mr: 1 }}>
-            <ArrowBackIcon />
-          </IconButton>
-        )}
-        <Typography variant="h6" component="h3" gutterBottom>
-          Creating giveaway
-        </Typography>
-      </Box>
+    <div>
+      <h1>Create Giveaway</h1>
+      {params ? <pre>{JSON.stringify(params, null, 2)}</pre> : "Loading..."}
 
-      {/* Stepper */}
-      <Box sx={{ position: "relative", height: 20, display: "flex", alignItems: "flex-start", justifyContent: "space-between", px: 4, mt: 3.5, mb: 3 }}>
-        <Box sx={{ position: "absolute", top: "32px", left: "8%", right: "8%", height: 4, bgcolor: "#888", borderRadius: 2, zIndex: 0 }}>
-          <Box sx={{ height: "100%", width: `${(currentStep / (steps.length - 1)) * 100}%`, bgcolor: "#00f2ffff", transition: "width 0.4s ease" }} />
-        </Box>
-        {steps.map((step, index) => {
-          const isActive = index <= currentStep;
-          return (
-            <Box key={index} sx={{ position: "absolute", left: index === 0 ? "8%" : index === 1 ? "50%" : "92%", transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", zIndex: 1 }}>
-              <Typography variant="caption" sx={{ mb: 1, fontSize: "0.75rem", color: isActive ? "#19b3d2ff" : "#888", fontWeight: isActive ? "bold" : "normal" }}>
-                {step}
-              </Typography>
-              <Box sx={{ width: 16, height: 16, borderRadius: "50%", bgcolor: isActive ? "#19b3d2ff" : "#888" }} />
-            </Box>
-          );
-        })}
-      </Box>
-
-      {/* Step content */}
-      {currentStep === 0 && (
-        <Box sx={{ textAlign: "center", mt: 6 }}>
-          <img src="/animations/gift.gif" alt="Gift animation" style={{ width: 190, height: 135, borderRadius: 16 }} />
-
-          {/* ✅ دکمه اصلاح شده */}
-<Button
-  variant="contained"
-  onClick={() => {
-    // فقط هدایت به @Gocherbot
-    window.location.href = "https://t.me/Gocherbot";
-  }}
-  sx={{
-    mt: 3,
-    borderRadius: 2,
-    width: 280,
-    bgcolor: "#757575",
-    color: "white",
-    fontWeight: "bold",
-    position: "relative",
-    overflow: "hidden",
-    "&:hover": { bgcolor: "#9e9e9e" },
-    "&::before": {
-      content: '""',
-      position: "absolute",
-      top: 0,
-      left: "-75%",
-      width: "50%",
-      height: "100%",
-      background:
-        "linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0) 100%)",
-      transform: "skewX(-20deg)",
-      animation: "shiny 1.5s infinite",
-    },
-    "@keyframes shiny": {
-      "0%": { left: "-75%" },
-      "100%": { left: "125%" },
-    },
-  }}
->
-  Add New Gift
-</Button>
-
-
-          <Typography sx={{ mt: 2, color: "#bbb", fontSize: "0.9rem", maxWidth: 320, mx: "auto" }}>
-            Send collectible gifts to @Gocherbot, then select one or more below to include in your giveaway.
-          </Typography>
-
-          <Box sx={{ mt: 5, px: 3, py: 2.5, borderRadius: 2, border: "1px solid #666", bgcolor: "#2c2c2c", color: "#ccc" }}>
-            <Typography variant="body2" sx={{ fontSize: "0.9rem", textAlign: "center" }}>
-              Your Gifts will appear here
-            </Typography>
-          </Box>
-        </Box>
-      )}
-
-      {currentStep === 1 && <StepTerms gift="terms" onNext={handleNextStep} />}
-      {currentStep === 2 && <StepConfirmation gift="confirm" onNext={handleNextStep} />}
-
-      {/* Bottom Button fixed */}
-      <Box sx={{ position: "fixed", bottom: 65, left: 0, right: 0, display: "flex", justifyContent: "center", zIndex: 10 }}>
-        <Button
-          variant="contained"
-          onClick={handleNextStep}
-          sx={{ width: 400, height: 40, borderRadius: 3, fontWeight: "bold", fontSize: "1rem", bgcolor: "#19b3d2ff", color: "white", "&:hover": { bgcolor: "#118893ff" } }}
-        >
-          Continue
-        </Button>
-      </Box>
-    </Box>
+      {/* نمونه استفاده از بقیه استپ‌ها */}
+      <StepTerms />
+      <StepConfirmation />
+    </div>
   );
 }
