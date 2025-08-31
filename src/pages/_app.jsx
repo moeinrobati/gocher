@@ -1,10 +1,9 @@
-// pages/_app.jsx
 import { ThemeProvider, createTheme, CssBaseline, GlobalStyles } from '@mui/material';
 import "../styles/globals.css";
 import AnimatedTabBarPro from "../components/AnimatedTabBarPro";
 import { useRouter } from "next/router";
 import localFont from 'next/font/local';
-import Script from 'next/script';
+import Layout from "./Layout";
 
 const myfont = localFont({ src: '../assets/fonts/fonnts.com-Museo_Sans_Rounded_700.otf' });
 
@@ -24,15 +23,13 @@ export default function MyApp({ Component, pageProps }) {
 
   return (
     <ThemeProvider theme={theme}>
-      {/* لود اسکریپت تلگرام */}
-<Script
-  src="/js/telegram-web-app.js"
-  strategy="beforeInteractive"
-/>
-
       <CssBaseline />
       <GlobalStyles styles={{ html: { fontFamily: myfont.style.fontFamily } }} />
-      <Component {...pageProps} />
+
+      <Layout>
+        <Component {...pageProps} />
+      </Layout>
+
       {!hideTabbarRoutes.includes(router.pathname) && <AnimatedTabBarPro />}
     </ThemeProvider>
   );

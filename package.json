@@ -5,6 +5,8 @@
     "@mui/icons-material": "^7.3.1",
     "@mui/material": "^7.3.1",
     "@supabase/supabase-js": "^2.55.0",
+    "@telegram-apps/bridge": "^2.11.0",
+    "@telegram-apps/sdk": "^3.11.5",
     "dotenv": "^17.2.1",
     "framer-motion": "^12.23.12",
     "lottie-react": "^2.4.1",

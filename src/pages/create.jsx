@@ -8,7 +8,6 @@ import StepConfirmation from "../components/StepConfirmation";
 
 export default function CreatePage() {
   const router = useRouter();
-  const [user, setUser] = useState(null);
   const steps = ["Gift selection", "Terms", "Confirmation"];
   const [currentStep, setCurrentStep] = useState(0);
 

@@ -1,16 +1,11 @@
-// components/Layout.jsx
-import TelegramInit from "./TelegramInit";
-import { UserProgressProvider, UserInfoProvider, DOMInfoProvider } from "../context";
+// src/pages/Layout.jsx
+import TelegramInit from "../components/TelegramInit";
 
 export default function Layout({ children }) {
   return (
-    <UserProgressProvider initialUser={null}>
-      <UserInfoProvider>
-        <DOMInfoProvider>
-          <TelegramInit />
-          {children}
-        </DOMInfoProvider>
-      </UserInfoProvider>
-    </UserProgressProvider>
+    <>
+      <TelegramInit />
+      {children}
+    </>
   );
 }
