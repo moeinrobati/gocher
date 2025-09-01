@@ -1,21 +1,31 @@
 'use client';
 import { useEffect, useState } from "react";
-import { init } from "@telegram-apps/sdk";
 
 export default function CreatePage() {
   const [user, setUser] = useState(null);
   const [platform, setPlatform] = useState("");
+  const [theme, setTheme] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
     try {
-      const tg = init(); // داخل تلگرام مقدار می‌گیره
-      console.log("✅ Telegram Init:", tg);
+      if (typeof window !== "undefined" && window.Telegram?.WebApp) {
+        const tg = window.Telegram.WebApp;
 
-      setUser(tg.user || null);
-      setPlatform(tg.platform || "unknown");
+        // آماده‌سازی
+        tg.ready();
+
+        console.log("✅ Telegram WebApp:", tg);
+
+        // گرفتن اطلاعات
+        setUser(tg.initDataUnsafe?.user || null);
+        setPlatform(tg.platform || "unknown");
+        setTheme(tg.colorScheme || "default");
+      } else {
+        setError("Not inside Telegram Mini App");
+      }
     } catch (err) {
-      console.error("❌ Not running inside Telegram:", err);
+      console.error("❌ Error:", err);
       setError(err.message);
     }
   }, []);
@@ -38,6 +48,7 @@ export default function CreatePage() {
       )}
 
       <p><b>Platform:</b> {platform}</p>
+      <p><b>Theme:</b> {theme}</p>
     </div>
   );
 }
