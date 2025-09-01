@@ -4,10 +4,9 @@ import { init } from '@telegram-apps/sdk';
 
 export default function TelegramInit() {
   useEffect(() => {
-    // فقط وقتی داخل تلگرام هست
     if (typeof window !== "undefined") {
       try {
-        const tg = init(); // init واقعی
+        const tg = init();
         console.log("Telegram initialized:", tg);
         console.log("InitData:", tg.initData);
         console.log("User:", tg.user);
