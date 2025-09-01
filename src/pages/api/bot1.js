@@ -97,7 +97,7 @@ export default async function handler(req, res) {
 
       const keyboard = {
         inline_keyboard: [
-          [{ text: "🚀 Open Gocher", web_app: { url: "https://gocher.ir" } }],
+          [{ text: "🚀 Open Gocher", web_app: { url: "https://gocher.vercel.app" } }],
         ],
       };
 
