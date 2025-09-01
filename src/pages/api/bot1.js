@@ -38,7 +38,7 @@ export default async function handler(req, res) {
             [
               {
                 text: "🚀 Open Gocher",
-                web_app: { url: "https://gocher.ir" },
+                web_app: { url: "https://gocher.vercel.app" },
               },
             ],
           ],
