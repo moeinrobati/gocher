@@ -5,7 +5,7 @@ import CopyInitData from '../components/CopyInitData';
 
 export default function CreatePage() {
   return (
-    <div style={{ padding: 20 }}>
+    <div style={{ padding: 100 }}>
       <h1>Create Page</h1>
 
       {/* این کامپوننت init() تلگرام را فراخوانی می‌کند */}
