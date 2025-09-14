@@ -1,11 +1,11 @@
-// src/pages/Layout.jsx
 import TelegramInit from '../components/TelegramInit';
 
-
+import CopyInitData from '../components/CopyInitData';
 export default function Layout({ children }) {
   return (
     <>
-      <TelegramInit />
+    <TelegramInit/>
+      <CopyInitData />
       {children}
     </>
   );
