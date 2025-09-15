@@ -4,8 +4,8 @@ import CopyInitData from '../components/CopyInitData';
 export default function Layout({ children }) {
   return (
     <>
-    <TelegramInit/>
-      <CopyInitData />
+      <TelegramInit/>
+      <CopyInitData/>
       {children}
     </>
   );
